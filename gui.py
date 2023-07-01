@@ -15,6 +15,7 @@ from helper import path_resolver
 
 
 EXE_PATH = path_resolver()
+INI_FILE = 'config.ini'
 SETTINGS_FILE = 'config.txt'
 OPAY_FILE = 'opay.txt'
 ecpay_donate_id_set = set()
@@ -264,7 +265,7 @@ def deactivate_bot():
 def load_config(config_filepath='default'):
 
     if config_filepath == 'default':
-        with open('config.ini', 'r') as f:
+        with open(os.path.join(EXE_PATH, INI_FILE), 'r') as f:
             ini_file = f.read()
         config_filepath = os.path.join(EXE_PATH, ini_file)
 
