@@ -1,0 +1,6 @@
+ecpay_id:
+opay_id:
+twitch_id:
+twitch_oauth:
+text_with_comment:感謝 {name} 打賞了 {amount} 元 🙏❤️🙏❤️ 他也留言想告訴我們：「{msg}」
+text_without_comment:感謝 {name} 打賞了 {amount} 元 🙏❤️🙏❤️
