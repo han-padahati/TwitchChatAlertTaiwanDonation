@@ -211,7 +211,7 @@ text_without_comment:{input_field_text_without_comment.get("1.0", tk.END).strip(
             f.write(text_to_save)
 
         root.title("圖奇斗內聊天室通知" + f' - {os.path.basename(new_file_path)}')
-        update_config_ini(os.path.basename(new_file_path))
+        update_config_ini(new_file_path)
 
 
 def activate_bot():
@@ -316,7 +316,7 @@ def load_config(config_filepath='default'):
         input_field_text_with_comment.insert('1.0', settings.get("text_with_comment", ""))
 
         root.title("圖奇斗內聊天室通知" + f' - {os.path.basename(config_filepath)}')
-        update_config_ini(os.path.basename(config_filepath))
+        update_config_ini(config_filepath)
 
     except FileNotFoundError:
         pass
