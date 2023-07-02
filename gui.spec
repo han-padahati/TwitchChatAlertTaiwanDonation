@@ -26,7 +26,7 @@ exe = EXE(pyz,
           a.zipfiles,
           a.datas,  
           [],
-          name='gui',
+          name='圖奇斗內聊天室通知',
           debug=False,
           bootloader_ignore_signals=False,
           strip=False,
@@ -43,3 +43,4 @@ import shutil
 
 shutil.copyfile('config.ini', '{0}/config.ini'.format(DISTPATH))
 shutil.copyfile('config.txt', '{0}/config.txt'.format(DISTPATH))
+shutil.copyfile('icon_32.ico', '{0}/icon_32.ico'.format(DISTPATH))

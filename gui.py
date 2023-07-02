@@ -381,7 +381,7 @@ root.config(menu=menubar)
 # 設定icon
 # small_icon = tk.PhotoImage(file="icon_16.png")
 # large_icon = tk.PhotoImage(file="icon_32.png")
-# root.iconphoto(False, large_icon, small_icon)
+root.iconbitmap("icon_32.ico")
 
 # Run the main loop
 root.mainloop()
