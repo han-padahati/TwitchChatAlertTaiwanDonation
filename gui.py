@@ -17,7 +17,7 @@ from helper import path_resolver
 EXE_PATH = path_resolver()
 INI_FILE = 'config.ini'
 SETTINGS_FILE = 'config.txt'
-OPAY_FILE = 'opay.txt'
+MOST_RECENT_DONOR_FILE = 'most_recent_donor.txt'
 ecpay_donate_id_set = set()
 opay_donate_id_set = set()
 bot = None
@@ -48,13 +48,7 @@ class Bot(SingleServerIRCBot):
         self.has_ecpay = has_ecpay
         self.opay_payload = ''
 
-
-        # if self.has_opay:
-        #     opay_file = os.path.join(EXE_PATH, OPAY_FILE)
-        #     self.payload, self.cookie = read_curl(opay_file)
-
-
-        super().__init__([(self.HOST, self.PORT, f"oauth:{self.TOKEN}")], self.USERNAME, self.USERNAME)
+        super().__init__([(self.HOST, self.PORT, f"{self.TOKEN}")], self.USERNAME, self.USERNAME)
 
         self.event = Event()
         self.timer_thread = RepeatTimer(self.REFRESH_TIME, self.send_request_to_endpoint)
@@ -118,15 +112,20 @@ class Bot(SingleServerIRCBot):
                 add_text_to_the_end(text_area_log, msg_to_log)
                 id_set.add(donate['donateid'])
 
-                write_donor_to_file("C:\\Users\\User\\Desktop\\Don\\twitch_padahati\\most_recent_taiwan_donor.txt", donate['name'], donate['amount'])
+                write_donor_to_file(os.path.join(EXE_PATH, MOST_RECENT_DONOR_FILE), donate['name'], donate['amount'])
 
     def _get_opay_payload(self, opay_id):
-        add_text_to_the_end(text_area_log, "重新取得歐付寶正確資料中...(若沒有繼續出現回應代碼500則代表取得成功)")
+        add_text_to_the_end(text_area_log, "重新取得歐付寶正確資料中...")
         token_ptn = '<input name="__RequestVerificationToken" type="hidden" value="(.*)"'
         header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36'}
         r = self.session_opay.get(f'https://payment.opay.tw/Broadcaster/AlertBox/{opay_id}', headers=header)
-        payload = re.search(token_ptn, r.content.decode()).group(1)
-        return payload
+        try:
+            payload = re.search(token_ptn, r.content.decode()).group(1)
+            add_text_to_the_end(text_area_log, "成功取得")
+            return payload
+        except:
+            add_text_to_the_end(text_area_log, "取得失敗")
+            return ""
 
     def send_message(self, message):
         self.connection.privmsg(self.CHANNEL, message)
@@ -167,7 +166,7 @@ def on_closing():
     sys.exit()
 
 def update_config_ini(filename):
-    with open(os.path.join(EXE_PATH, 'config.ini'), "w", encoding='utf-8') as f:
+    with open(os.path.join(EXE_PATH, INI_FILE), "w", encoding='utf-8') as f:
         f.write(filename)
 
 def add_text_to_the_end(textarea, text):
@@ -286,8 +285,8 @@ def load_config(config_filepath='default'):
 
         settings = {}
         for line in lines:
-            key, value = line.strip().split(":")
-            settings[key] = value
+            elms = line.strip().split(":")
+            settings[elms[0]] = ''.join(elms[1:])
 
         if 'opay_id' in settings and settings.get("opay_id", "") != '':
             check_opay.set(1)
