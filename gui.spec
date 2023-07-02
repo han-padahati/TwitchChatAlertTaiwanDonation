@@ -43,4 +43,3 @@ import shutil
 
 shutil.copyfile('config.ini', '{0}/config.ini'.format(DISTPATH))
 shutil.copyfile('config.txt', '{0}/config.txt'.format(DISTPATH))
-shutil.copyfile('opay.txt', '{0}/opay.txt'.format(DISTPATH))
