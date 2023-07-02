@@ -8,7 +8,7 @@ from requests import get, Session
 from threading import Thread, Event
 import threading
 from threading import Timer
-import sys, os, datetime, pytz
+import sys, os, datetime, pytz, re
 
 from config import read_curl
 from helper import path_resolver
@@ -42,13 +42,16 @@ class Bot(SingleServerIRCBot):
         self.TEXT_WITH_COMMENT = text_with_comment
         self.TEXT_WITHOUT_COMMENT = text_without_comment
         self.is_connected = False
-        self.session = Session()
+        self.session_ecpay = Session()
+        self.session_opay = Session()
         self.has_opay = has_opay
         self.has_ecpay = has_ecpay
+        self.opay_payload = ''
 
-        if self.has_opay:
-            opay_file = os.path.join(EXE_PATH, OPAY_FILE)
-            self.payload, self.cookie = read_curl(opay_file)
+
+        # if self.has_opay:
+        #     opay_file = os.path.join(EXE_PATH, OPAY_FILE)
+        #     self.payload, self.cookie = read_curl(opay_file)
 
 
         super().__init__([(self.HOST, self.PORT, f"oauth:{self.TOKEN}")], self.USERNAME, self.USERNAME)
@@ -75,30 +78,30 @@ class Bot(SingleServerIRCBot):
         if which_site == 'ecpay':
             url = f'https://payment.ecpay.com.tw/Broadcaster/CheckDonate/{self.ECPAYID}'
             id_set = ecpay_donate_id_set
-            response = self.session.post(url)
+            response = self.session_ecpay.post(url)
             if response.status_code != 200:
-                messagebox.showerror(title="要求錯誤", message=f"未正確從綠界伺服器得到資料回傳，回應代碼：{response.status_code}")
-                raise Exception('Close')
-                sys.exit()
-            result = response.json()
+                add_text_to_the_end(text_area_log, f"未正確綠界伺服器得到資料回傳，回應代碼：{response.status_code}")
+                return
+            else:
+                result = response.json()
 
         elif which_site == 'opay':
             url = f'https://payment.opay.tw/Broadcaster/CheckDonate/{self.OPAYID}'
             id_set = opay_donate_id_set
-            
-            payload = self.payload
+            payload = {'__RequestVerificationToken': self.opay_payload}
             headers = {
               'content-type': 'application/x-www-form-urlencoded; charset=UTF-8',
-              'cookie': self.cookie,
               'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36'
             }
 
-            response = self.session.post(url, headers=headers, data=payload)
+            response = self.session_opay.post(url, headers=headers, data=payload)
             
             if response.status_code != 200:
-                messagebox.showerror(title="要求錯誤", message="未正確從歐付寶伺服器得到資料回傳，回應代碼：{response.status_code}")
-                raise Exception('Close')
-            result = response.json()['lstDonate']
+                add_text_to_the_end(text_area_log, f"未正確從歐付寶伺服器得到資料回傳，回應代碼：{response.status_code}")
+                self.opay_payload = self._get_opay_payload(self.OPAYID)
+                return
+            else:
+                result = response.json()['lstDonate']
 
         for donate in result:
             if donate['donateid'] not in id_set:
@@ -115,7 +118,15 @@ class Bot(SingleServerIRCBot):
                 add_text_to_the_end(text_area_log, msg_to_log)
                 id_set.add(donate['donateid'])
 
+                write_donor_to_file("C:\\Users\\User\\Desktop\\Don\\twitch_padahati\\most_recent_taiwan_donor.txt", donate['name'], donate['amount'])
 
+    def _get_opay_payload(self, opay_id):
+        add_text_to_the_end(text_area_log, "重新取得歐付寶正確資料中...(若沒有繼續出現回應代碼500則代表取得成功)")
+        token_ptn = '<input name="__RequestVerificationToken" type="hidden" value="(.*)"'
+        header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36'}
+        r = self.session_opay.get(f'https://payment.opay.tw/Broadcaster/AlertBox/{opay_id}', headers=header)
+        payload = re.search(token_ptn, r.content.decode()).group(1)
+        return payload
 
     def send_message(self, message):
         self.connection.privmsg(self.CHANNEL, message)
@@ -311,6 +322,9 @@ def load_config(config_filepath='default'):
     except FileNotFoundError:
         pass
 
+def write_donor_to_file(filepath, donor, amount):
+    with open(filepath, 'w', encoding='utf-8') as f:
+        f.write(f"{donor}: {amount}")
 
 # Create the main root
 root = tk.Tk()
